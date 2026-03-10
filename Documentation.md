@@ -281,4 +281,248 @@ Working Good
 
 -----------------------------------------------------
 
+## Phase 3 - Application Layer
+
+Build a **Python interface** that **interacts with the PostgreSQL database** to simulate hospital operations.
+
+Instead of manually writing SQL every time, we will create Python functions that perform operations like:
+register a patient
+book an appointment
+record a visit
+add prescriptions
+add treatments
+
+This simulates how a real hospital backend service works.
+
+### 1. Project Folder structure
+
+smart-healthcare-dbms/
+│
+├── database/
+│   │
+│   ├── schema.sql
+│   ├── sample_data.sql
+│   └── indexes.sql
+│
+├── app/
+│   │
+│   ├── db_connection.py
+│   │
+│   ├── services/
+│   │   ├── patient_service.py
+│   │   ├── doctor_service.py
+│   │   ├── appointment_service.py
+│   │   └── visit_service.py
+│   │
+│   └── utils/
+│       └── helpers.py
+│
+├── transactions/
+│   │
+│   ├── transaction_demo.py
+│   ├── rollback_demo.py
+│   └── concurrency_test.py
+│
+├── etl/
+│   │
+│   ├── extract.py
+│   ├── transform.py
+│   └── load.py
+│
+├── warehouse/
+│   │
+│   ├── warehouse_schema.sql
+│   └── analytics_queries.sql
+│
+├── data/
+│   │
+│   └── generated_data/
+│
+├── tests/
+│   │
+│   ├── test_patients.py
+│   └── test_appointments.py
+│
+├── docs/
+│   │
+│   ├── project_plan.docx
+│   ├── er_diagram.png
+│   └── architecture.md
+│
+├── main.py
+│
+├── requirements.txt
+│
+└── README.md
+
+### 2. Install postgres driver
+
+- pip install psycopg2
+
+### 3. Database Connection Module
+
+### 4. Implementing Core operations
+
+Operation	File
+Register patient	patient_service.py
+Add doctor	doctor_service.py
+Book appointment	appointment_service.py
+Record visit	visit_service.py
+Add prescription	visit_service.py
+Add treatment	visit_service.py
+
+And they will be executed through
+ - main.py
+
+### 5. Including the patient doctor role based access design
+
+Updated Folder structure
+
+smart-healthcare-dbms/
+│
+├── database/
+├── app/
+│   ├── db_connection.py
+│
+│   ├── api/
+│   │   ├── patient/
+│   │   │   ├── patient_routes.py
+│   │   │   └── appointment_routes.py
+│   │   │
+│   │   └── doctor/
+│   │       ├── doctor_routes.py
+│   │       └── visit_routes.py
+│   │
+│   ├── services/
+│   │   ├── patient_service.py
+│   │   ├── doctor_service.py
+│   │   ├── appointment_service.py
+│   │   └── visit_service.py
+│   │
+│   └── utils/
+│       └── helpers.py
+│
+├── transactions/
+├── etl/
+├── warehouse/
+├── data/
+├── tests/
+├── docs/
+│
+├── main.py
+├── requirements.txt
+└── README.md
+
+### 6. Updating the requirements
+psycopg2-binary
+fastapi
+uvicorn
+pandas
+sqlalchemy
+faker
+python-dotenv
+
+### 7. Updating the ***main.py*** FastAPI application
+
+Getting all the routes of respective patient and doctor role
+
+### 8. Patient registration endpoint
+
+- app/api/patient/patient_routes.py
+
+### 9. Patient Book Apointment endpoint
+
+- app/api/patient/appointment_routes.py
+
+### 10. Viewing Doctors Endpoint
+
+- app/api/doctor/doctor_routes.py
+
+### 11. Adding Doctor Service Function
+
+- app/services/doctor_service.py
+
+### 12. Docotr's Record Visit
+
+- app/api/doctor/visit_routes.py
+
+- Doctor - Add Prescription
+
+- Doctor - Add Treatment
+
+### 13. Running the api server
+----------------------------------------------------
+
+## Complete **Data Flow** of the system
+
+System Setup
+   ↓
+Departments + Doctors (initial data)
+   ↓
+Doctor Registration API
+   ↓
+Patient Registration API
+   ↓
+Appointment Booking
+   ↓
+Doctor Visit
+   ↓
+Prescriptions + Treatments
+   ↓
+Large dataset generation
+   ↓
+Transactions testing
+   ↓
+ETL pipeline
+   ↓
+Data warehouse analytics
+
+## Phase 3 Extended
+
+### Adding three missing API
+- Doctor registration - ***app/api/doctor/doctor_routes.py***
+- List departments - ***app/api/patient/department_routes.py***
+- List doctors by department - ***app/api/patient/department_routes.py***
+
+### Creating a new service - **Department Service**
+
+- app/services/department_service.py
+
+- Registering new routes - ***main.py***
+
+
+### New APIs Added
+API	Purpose
+POST /doctors/register	Doctor self-registration
+GET /doctors	List all doctors
+GET /departments	List departments
+GET /departments/{id}/doctors	Doctors in department
+
+
+**Patient flow**:
+GET /departments
+GET /departments/{id}/doctors
+POST /patients/register
+POST /appointments/book
+
+
+**Doctor flow**:
+POST /doctors/register
+GET /doctor/{id}/appointments
+POST /doctor/record-visit
+POST /doctor/add-prescription
+POST /doctor/add-treatment
+
+
+### Converting to pydantic for better api requests
+
+- Creating the ***schema*** folder
+
+FastAPI Routes
+        ↓
+Pydantic Schemas
+        ↓
+Service Layer
+        ↓
+PostgreSQL Database
 
