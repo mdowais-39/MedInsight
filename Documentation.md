@@ -526,3 +526,49 @@ Service Layer
         ↓
 PostgreSQL Database
 
+### Adding some predefined doctor departments to make appointments and get prescreption and treatment api working
+
+-----------------------------------------------------
+
+## Phase 4 - Transaction Management And Concurrency
+
+- **ACID**
+- **Isolation Levels**
+- **Rollback**
+- **Handling cometing booking**
+
+### 1. Transaction Demo(ACID-Atomic Commit)
+
+- Showing that **multiple operations** succeed together inside **one transaction**
+
+### 2. Rollbakc Demonstration
+
+- **Showing Atomicity** - if **one operation fails** **all operations are rolled back**
+
+### 3. Concurrency Test ( Two Patients Same Slot)
+
+- Simulating **two users booking the same doctor/time slot**
+
+
+- **Unique constraint**:
+UNIQUE (doctor_id, appointment_date, appointment_time)
+
+**Expected result**:
+Patient 1 booked successfully
+Patient 2 failed: duplicate key value violates unique constraint
+
+### 4. Isolation Level Experiment
+
+
+- cur.execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE")
+
+
+Example levels:
+READ COMMITTED
+REPEATABLE READ
+SERIALIZABLE
+
+- This helps demonstrate concurrency transaction behavior
+
+
+
