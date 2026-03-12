@@ -601,3 +601,179 @@ transaction isolation in maintaining data consistency.
 Patient 2 booked successfully
 Patient 1 failed
 
+-----------------------------------------------------------
+
+## Phase 5 - Database Performance Optimization
+
+- Query performance
+- Indexing
+- Query planning
+- Optimization
+
+- IMP because **databases becomes slow when the tables grow**
+
+This phase will mostly affect the database folder.
+
+database/
+│
+├── schema.sql
+├── sample_data.sql
+└── indexes.sql   ← new file
+
+And we will create a performance test script.
+
+tests/
+│
+└── performance_test.py
+
+### 1. Identify all the slow queries
+
+Common queries:
+- Fetch doctors
+- Fetch doctors by department
+- Fetch patient appointments
+- Fetch doctor's schedule
+
+### 2. Analyze query performance
+
+PostgreSQL provides
+
+- EXPLAIN ANALYZE
+
+EXPLAIN ANALYZE
+SELECT * FROM Appointments
+WHERE doctor_id = 1;
+
+If postgreSQL scans the entire table, we will see:
+Seq Scan on appointments
+-this means full table scan(slow)
+
+### 3. Add Indexes
+
+Indexes allows postgreSQL to find records quickly
+
+Add indexes
+- doctor lookup
+- patient appointment lookup
+- doctor schedule lookup
+- date based queries
+- visit lookup
+- prescreption lookup
+
+### 4. Run the index Script
+
+Run the index script
+- \i database/indexes.sql
+
+Check Indexes
+- \d Appointments
+
+
+Inside PostgreSQL:
+\i database/indexes.sql
+
+Check indexes:
+\d Appointments
+
+Indexes:
+    "appointments_pkey" PRIMARY KEY, btree (appointment_id)
+    "idx_appointments_date" btree (appointment_date)
+    "idx_appointments_doctor" btree (doctor_id)
+    "idx_appointments_patient" btree (patient_id)
+    "unique_doctor_slot" UNIQUE CONSTRAINT, btree (doctor_id, appointment_date, appointment_time)
+
+
+### 5. Re-run Performance Analysis
+
+- EXPLAIN ANALYZE
+SELECT * FROM Appointments
+WHERE doctor_id = 1;
+
+                                                           QUERY PLAN
+---------------------------------------------------------------------------------------------------------------------------------------   
+ Index Scan using idx_appointments_doctor on appointments  (cost=0.13..8.15 rows=1 width=90) (actual time=0.109..0.109 rows=0 loops=1)    
+   Index Cond: (doctor_id = 1)
+ Planning Time: 0.251 ms
+ Execution Time: 0.151 ms
+(4 rows)
+
+
+Initially, PostgreSQL used a sequential scan due to the small size of the table.
+After increasing the dataset size, the query planner switched to an index scan, demonstrating the effectiveness of indexing for large datasets.
+
+### 6. Performance Test Script
+
+- tests/performance_test.py
+
+### 7. Phase 5 observables
+
+Optimization	Benefit
+Indexes	faster lookup
+Query analysis	detect slow queries
+Execution plans	understand DB behavior
+Performance measurement	validate improvements
+
+- Performance optimization was performed by analyzing
+query execution plans using **EXPLAIN ANALYZE.**
+
+- Indexes were created on frequently queried attributes
+such as **doctor_id, patient_id, and appointment_date, visit_id, department_id**.
+
+- **Before indexing**, PostgreSQL performed **sequential scans** which required scanning the entire table.
+
+- After indexing, the database used index scans which
+significantly **improved query performance**.
+
+-----------------------------------------------------------
+
+## Phase 6 - ETL Pipeline + Large Dataset Generation
+
+Transforming from **DBMS system** into also **data engineering concepts**
+
+Will Implement:
+ETL = Extract → Transform → Load
+
+Operational Database (OLTP)
+        ↓
+Extract data
+        ↓
+Transform data
+        ↓
+Load analytics-ready tables
+
+### 1. Generating Large Dataset
+
+- data/generate_large_dataset.py
+
+### 2. Extract Phase
+
+- etl/extract.py
+
+### 3. Transform Phase
+
+- etl/transform.py
+
+### 4. Load Phase
+
+- etl/load.py
+
+### 5. ETL RUnner
+
+- etl/run_etl.py
+
+Extraction Completed
+Transformation completed
+patients loaded successfully
+doctors loaded successfully
+appointments loaded successfully
+
+### 6. Verify Large Dataset
+
+- SELECT COUNT(*) FROM Patients;
+- SELECT COUNT(*) FROM Doctors;
+- SELECT COUNT(*) FROM Appointments;
+
+
+Patients      ~10000
+Doctors       ~200
+Appointments  ~50000
