@@ -570,5 +570,34 @@ SERIALIZABLE
 
 - This helps demonstrate concurrency transaction behavior
 
+### Testing Documentation
 
+**Transaction Test**
+Operation: Insert patient and appointment in single transaction
+Result: Both operations committed successfully
+Conclusion: Demonstrates Atomicity
+
+**Rollback Test**
+Operation: Intentional SQL error inside transaction
+Result: Entire transaction rolled back
+Conclusion: Demonstrates Atomicity
+
+**Concurrency Test**
+Operation: Two users attempt to book same slot
+Result: Only one transaction succeeded
+Conclusion: Demonstrates Isolation and Consistency
+
+- A concurrency test was conducted where two patients attempted
+to book the same doctor appointment slot simultaneously.
+
+Due to the UNIQUE constraint on (doctor_id, appointment_date,
+appointment_time), the database allowed only one transaction
+to commit successfully while the other transaction failed and
+was rolled back.
+
+This demonstrates the role of database constraints and
+transaction isolation in maintaining data consistency.
+
+Patient 2 booked successfully
+Patient 1 failed
 

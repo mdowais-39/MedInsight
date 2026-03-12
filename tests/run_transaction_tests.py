@@ -8,3 +8,4 @@ subprocess.run(["python","transactions/rollback_demo.py"])
 
 print("Running concurrency test")
 subprocess.run(["python","transactions/concurrency_test.py"])
+
