@@ -777,3 +777,109 @@ appointments loaded successfully
 Patients      ~10000
 Doctors       ~200
 Appointments  ~50000
+
+----------------------------------------------------------
+
+## Phase 7 - Data Warehousing And Analytics
+
+- transform from **OLTP -> OLAP**
+
+Current System
+APIs → OLTP Database (PostgreSQL)
+           ↓
+        ETL Pipeline
+
+Now 
+OLTP Database
+      ↓
+ETL Aggregation
+      ↓
+Data Warehouse (OLAP)
+      ↓
+Analytics Queries
+
+### 1. Data Warehouse Design
+
+- Operational databases store transaction level data
+- Warehouses store analytics-friendly structures
+
+**STAR Schema**
+
+            DimDoctor
+                |
+DimPatient — FactVisits — DimDepartment
+                |
+             DimTime
+
+
+### 2. Warehouse Schema
+
+- warehouse/warehouse_schema.sql
+
+- Creating the **STAR Schema** and the **FACT TABLE**
+
+
+### 3. Create Warehouse tables
+
+- \i warehouse/warehouse_schema.sql
+
+
+### 4. Populate Dimension Table
+
+- Loading **Dimension from OLTP tables**
+
+- DimPatient
+INSERT INTO DimPatient (patient_id, age, gender)
+SELECT patient_id, age, gender
+FROM Patients;
+
+- DimDoctor
+INSERT INTO DimDoctor (doctor_id, specialization, department_id)
+SELECT doctor_id, specialization, department_id
+FROM Doctors;
+
+- DimDepartment
+INSERT INTO DimDepartment (department_id, department_name)
+SELECT department_id, department_name
+FROM Departments;
+
+- DimTime
+INSERT INTO DimTime (date, year, month, day)
+SELECT DISTINCT
+appointment_date,
+EXTRACT(YEAR FROM appointment_date),
+EXTRACT(MONTH FROM appointment_date),
+EXTRACT(DAY FROM appointment_date)
+FROM Appointments;
+
+### 6. Populate Fact TABLE
+
+**Fact table aggregates visits**
+
+INSERT INTO FactVisits(
+    patient_id,
+    doctor_id,
+    department_id,
+    appointment_date,
+    total_visits
+)
+SELECT
+    a.patient_id,
+    a.doctor_id,
+    d.department_id,
+    a.appointment_date,
+    COUNT(*)
+FROM Appointments a
+JOIN Doctors d
+ON a.doctor_id = d.doctor_id
+GROUP BY
+    a.patient_id,
+    a.doctor_id,
+    d.department_id,
+    a.appointment_date;
+
+- Now the **Warehouse has analytics ready data**
+
+### 7. Analytics Queries
+
+- warehouse.analytics_queries.sql
