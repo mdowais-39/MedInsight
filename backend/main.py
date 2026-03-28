@@ -8,6 +8,7 @@ from app.api.patient.appointment_routes import router as appointment_router
 from app.api.doctor.doctor_routes import router as doctor_router
 from app.api.doctor.visit_routes import router as visit_router
 from app.api.patient.department_routes import router as department_router
+from app.api.analytics.analytics_routes import router as analytics_router
 
 load_dotenv()
 
@@ -18,7 +19,8 @@ app = FastAPI(
 )
 
 # CORS — allow configured origins (set ALLOWED_ORIGINS in env vars)
-allowed_origins_raw = os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+# In development, allow localhost on all ports; in production, restrict to specific origins
+allowed_origins_raw = os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://localhost:8080,http://localhost:5173")
 allowed_origins = [o.strip() for o in allowed_origins_raw.split(",")]
 
 app.add_middleware(
@@ -34,6 +36,7 @@ app.include_router(appointment_router)
 app.include_router(doctor_router)
 app.include_router(visit_router)
 app.include_router(department_router)
+app.include_router(analytics_router)
 
 
 @app.get("/")

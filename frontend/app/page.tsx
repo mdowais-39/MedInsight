@@ -47,6 +47,9 @@ export default function HomePage() {
             <Link href="#portals" className="text-muted-foreground hover:text-foreground transition-colors">
               Portals
             </Link>
+            <Link href="/analytics" className="text-muted-foreground hover:text-foreground transition-colors">
+              Analytics
+            </Link>
           </nav>
         </div>
       </header>
