@@ -937,3 +937,43 @@ SELECT setval(
 ✔ Sequence management
 ✔ API + DB integration
 
+-----------------------------------------------------------
+
+## Phase 9 - Analytics API ( OLAP endpoints)
+
+Adding the following endpoints
+
+-GET /analytics/top-doctors
+-GET /analytics/department-load
+-GET /analytics/monthly-visits
+-GET /analytics/doctor-workload
+
+### 1. Creating the analytics api folder
+
+app/
+├── api/
+│   ├── analytics/
+│   │   └── analytics_routes.py
+
+### 2. Create analytics service
+
+- app/services/analytics_service.py
+
+- Contains the analytics queries to get the results directly from the db
+
+### 3. Creting API Routes
+
+- app/api/analytics/analytics_routes.py
+
+- Importing the analytics service and routing them
+
+### 4. Register in main.py
+
+Import the ***analytics_router*** in the main.py
+
+### 5. Run server
+
+- All the **analytics working fine**
+
+
+
