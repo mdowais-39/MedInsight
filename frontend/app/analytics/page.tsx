@@ -46,8 +46,30 @@ export default function AnalyticsDashboard() {
         setMonthlyVisits(monthlyVisitsData);
         setDoctorWorkload(doctorWorkloadData);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load analytics data");
-        console.error("Error fetching analytics:", err);
+        const errorMsg = err instanceof Error ? err.message : "Failed to load analytics data";
+        setError(errorMsg);
+        
+        // Use mock data for demonstration when API is unavailable
+        setTopDoctors([
+          { doctor_id: 1, total_appointments: 45 },
+          { doctor_id: 2, total_appointments: 38 },
+          { doctor_id: 3, total_appointments: 32 },
+        ]);
+        setDepartmentLoad([
+          { department_id: 1, total_visits: 120 },
+          { department_id: 2, total_visits: 95 },
+          { department_id: 3, total_visits: 78 },
+        ]);
+        setMonthlyVisits([
+          { year: 2024, month: 1, total_visits: 45 },
+          { year: 2024, month: 2, total_visits: 52 },
+          { year: 2024, month: 3, total_visits: 48 },
+        ]);
+        setDoctorWorkload([
+          { doctor_id: 1, total_visits: 85 },
+          { doctor_id: 2, total_visits: 72 },
+          { doctor_id: 3, total_visits: 68 },
+        ]);
       } finally {
         setLoading(false);
       }
@@ -88,7 +110,11 @@ export default function AnalyticsDashboard() {
         {error && (
           <Card className="border-destructive/50 bg-destructive/10 mb-8">
             <CardContent className="pt-6">
-              <p className="text-destructive">{error}</p>
+              <p className="text-destructive font-semibold mb-2">⚠ Backend Connection Issue</p>
+              <p className="text-destructive/90 text-sm mb-2">{error}</p>
+              <p className="text-destructive/80 text-xs">
+                Displaying sample data for demonstration. Please ensure the backend API is running at http://127.0.0.1:8000 or set NEXT_PUBLIC_API_URL environment variable.
+              </p>
             </CardContent>
           </Card>
         )}

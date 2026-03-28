@@ -24,18 +24,18 @@ export function TopDoctorsChart({ data }: TopDoctorsChartProps) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <BarChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-        <XAxis dataKey="doctor_id" stroke="var(--color-muted-foreground)" />
-        <YAxis stroke="var(--color-muted-foreground)" />
+        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" />
+        <XAxis dataKey="doctor_id" stroke="hsl(var(--muted-foreground))" />
+        <YAxis stroke="hsl(var(--muted-foreground))" />
         <Tooltip
           contentStyle={{
-            backgroundColor: "var(--color-card)",
-            border: "1px solid var(--color-border)",
+            backgroundColor: "hsl(var(--card))",
+            border: "1px solid hsl(var(--border))",
             borderRadius: "8px",
           }}
-          cursor={{ fill: "var(--color-primary)", opacity: 0.1 }}
+          cursor={{ fill: "hsl(var(--primary))", opacity: 0.1 }}
         />
-        <Bar dataKey="total_appointments" fill="var(--color-primary)" radius={[8, 8, 0, 0]} />
+        <Bar dataKey="total_appointments" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

@@ -15,8 +15,8 @@ interface DepartmentLoadChartProps {
 }
 
 const COLORS = [
-  "var(--color-primary)",
-  "var(--color-accent)",
+  "hsl(var(--primary))",
+  "hsl(var(--accent))",
   "#8b5cf6",
   "#ec4899",
   "#f59e0b",
@@ -50,15 +50,16 @@ export function DepartmentLoadChart({ data }: DepartmentLoadChartProps) {
         </Pie>
         <Tooltip
           contentStyle={{
-            backgroundColor: "var(--color-card)",
-            border: "1px solid var(--color-border)",
+            backgroundColor: "hsl(var(--card))",
+            border: "1px solid hsl(var(--border))",
             borderRadius: "8px",
+            color: "hsl(var(--foreground))",
           }}
           formatter={(value) => `${value} visits`}
         />
         <Legend
           wrapperStyle={{
-            color: "var(--color-foreground)",
+            color: "hsl(var(--foreground))",
           }}
         />
       </PieChart>

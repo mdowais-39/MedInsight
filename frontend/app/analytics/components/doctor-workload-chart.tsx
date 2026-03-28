@@ -24,25 +24,26 @@ export function DoctorWorkloadChart({ data }: DoctorWorkloadChartProps) {
   return (
     <ResponsiveContainer width="100%" height={400}>
       <BarChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
         <XAxis
           dataKey="doctor_id"
-          stroke="var(--color-muted-foreground)"
+          stroke="hsl(var(--muted-foreground))"
           angle={-45}
           textAnchor="end"
           height={80}
         />
-        <YAxis stroke="var(--color-muted-foreground)" />
+        <YAxis stroke="hsl(var(--muted-foreground))" />
         <Tooltip
           contentStyle={{
-            backgroundColor: "var(--color-card)",
-            border: "1px solid var(--color-border)",
+            backgroundColor: "hsl(var(--card))",
+            border: "1px solid hsl(var(--border))",
             borderRadius: "8px",
+            color: "hsl(var(--foreground))",
           }}
-          cursor={{ fill: "var(--color-accent)", opacity: 0.1 }}
+          cursor={{ fill: "hsl(var(--accent))", opacity: 0.1 }}
           formatter={(value) => `${value} visits`}
         />
-        <Bar dataKey="total_visits" fill="var(--color-accent)" radius={[8, 8, 0, 0]} />
+        <Bar dataKey="total_visits" fill="hsl(var(--accent))" radius={[8, 8, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
