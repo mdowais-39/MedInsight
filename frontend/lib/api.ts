@@ -259,3 +259,40 @@ export const appointmentAPI = {
     apiRequest<DoctorAppointment[]>(`/appointments/doctor/${doctorId}`),
 };
 
+// ─── Analytics APIs ────────────────────────────────────────────────────────
+
+export interface TopDoctor {
+  doctor_id: number;
+  total_appointments: number;
+}
+
+export interface DepartmentLoad {
+  department_id: number;
+  total_visits: number;
+}
+
+export interface MonthlyVisit {
+  year: number;
+  month: number;
+  total_visits: number;
+}
+
+export interface DoctorWorkload {
+  doctor_id: number;
+  total_visits: number;
+}
+
+export const analyticsAPI = {
+  getTopDoctors: () =>
+    apiRequest<TopDoctor[]>("/analytics/top-doctors"),
+
+  getDepartmentLoad: () =>
+    apiRequest<DepartmentLoad[]>("/analytics/department-load"),
+
+  getMonthlyVisits: () =>
+    apiRequest<MonthlyVisit[]>("/analytics/monthly-visits"),
+
+  getDoctorWorkload: () =>
+    apiRequest<DoctorWorkload[]>("/analytics/doctor-workload"),
+};
+
