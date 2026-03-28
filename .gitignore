@@ -1,0 +1,23 @@
+# ─── Python backend ────────────────────────────────────────────────────────
+backend/.env
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.pyc
+backend/medinsight/
+backend/.venv/
+backend/venv/
+
+# ─── Next.js frontend ──────────────────────────────────────────────────────
+frontend/.env.local
+frontend/.env*.local
+frontend/.next/
+frontend/node_modules/
+frontend/out/
+frontend/.pnpm-store/
+
+# ─── OS / Editor ───────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
