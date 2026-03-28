@@ -3,119 +3,135 @@ from app.db_connection import get_connection
 
 def get_top_doctors():
     """Get the top 10 doctors by number of appointments"""
-    conn = get_connection()
-    cur = conn.cursor()
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
 
-    query = """
-        SELECT doctor_id,
-        COUNT(*) AS total_appointments
-        FROM Appointments
-        GROUP BY doctor_id
-        ORDER BY total_appointments DESC
-        LIMIT 10;
-    """
-    
-    cur.execute(query)
-    rows = cur.fetchall()
-    
-    cur.close()
-    conn.close()
+        query = """
+            SELECT doctor_id,
+            COUNT(*) AS total_appointments
+            FROM Appointments
+            GROUP BY doctor_id
+            ORDER BY total_appointments DESC
+            LIMIT 10;
+        """
+        
+        cur.execute(query)
+        rows = cur.fetchall()
+        
+        cur.close()
+        conn.close()
 
-    return [
-        {
-            "doctor_id": r[0],
-            "total_appointments": r[1],
-        }
-        for r in rows
-    ]
+        return [
+            {
+                "doctor_id": r[0],
+                "total_appointments": r[1],
+            }
+            for r in rows
+        ]
+    except Exception as e:
+        print(f"Error in get_top_doctors: {str(e)}")
+        return []
 
 
 def get_department_load():
     """Get total visits per department"""
-    conn = get_connection()
-    cur = conn.cursor()
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
 
-    query = """
-        SELECT
-        department_id,
-        SUM(total_visits) AS total_visits
-        FROM FactVisits
-        GROUP BY department_id
-        ORDER BY SUM(total_visits) DESC;
-    """
-    
-    cur.execute(query)
-    rows = cur.fetchall()
-    
-    cur.close()
-    conn.close()
+        query = """
+            SELECT
+            d.department_id,
+            COUNT(v.visit_id) AS total_visits
+            FROM Departments d
+            LEFT JOIN Doctors doc ON d.department_id = doc.department_id
+            LEFT JOIN Visits v ON doc.doctor_id = v.doctor_id
+            GROUP BY d.department_id
+            ORDER BY COUNT(v.visit_id) DESC;
+        """
+        
+        cur.execute(query)
+        rows = cur.fetchall()
+        
+        cur.close()
+        conn.close()
 
-    return [
-        {
-            "department_id": r[0],
-            "total_visits": int(r[1]) if r[1] else 0,
-        }
-        for r in rows
-    ]
+        return [
+            {
+                "department_id": r[0],
+                "total_visits": int(r[1]) if r[1] else 0,
+            }
+            for r in rows
+        ]
+    except Exception as e:
+        print(f"Error in get_department_load: {str(e)}")
+        return []
 
 
 def get_monthly_visits():
     """Get monthly patient visits over time"""
-    conn = get_connection()
-    cur = conn.cursor()
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
 
-    query = """
-        SELECT
-        t.year,
-        t.month,
-        SUM(f.total_visits) AS total_visits
-        FROM FactVisits f
-        JOIN DimTime t
-        ON f.appointment_date = t.date
-        GROUP BY t.year, t.month
-        ORDER BY t.year, t.month;
-    """
-    
-    cur.execute(query)
-    rows = cur.fetchall()
-    
-    cur.close()
-    conn.close()
+        query = """
+            SELECT
+            EXTRACT(YEAR FROM v.visit_date)::INT AS year,
+            EXTRACT(MONTH FROM v.visit_date)::INT AS month,
+            COUNT(v.visit_id) AS total_visits
+            FROM Visits v
+            GROUP BY EXTRACT(YEAR FROM v.visit_date), EXTRACT(MONTH FROM v.visit_date)
+            ORDER BY year, month;
+        """
+        
+        cur.execute(query)
+        rows = cur.fetchall()
+        
+        cur.close()
+        conn.close()
 
-    return [
-        {
-            "year": r[0],
-            "month": r[1],
-            "total_visits": int(r[2]) if r[2] else 0,
-        }
-        for r in rows
-    ]
+        return [
+            {
+                "year": int(r[0]) if r[0] else 0,
+                "month": int(r[1]) if r[1] else 0,
+                "total_visits": int(r[2]) if r[2] else 0,
+            }
+            for r in rows
+        ]
+    except Exception as e:
+        print(f"Error in get_monthly_visits: {str(e)}")
+        return []
 
 
 def get_doctor_workload():
     """Get total visits per doctor"""
-    conn = get_connection()
-    cur = conn.cursor()
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
 
-    query = """
-        SELECT
-        doctor_id,
-        SUM(total_visits) AS total_visits
-        FROM FactVisits
-        GROUP BY doctor_id
-        ORDER BY SUM(total_visits) DESC;
-    """
-    
-    cur.execute(query)
-    rows = cur.fetchall()
-    
-    cur.close()
-    conn.close()
+        query = """
+            SELECT
+            v.doctor_id,
+            COUNT(v.visit_id) AS total_visits
+            FROM Visits v
+            GROUP BY v.doctor_id
+            ORDER BY COUNT(v.visit_id) DESC;
+        """
+        
+        cur.execute(query)
+        rows = cur.fetchall()
+        
+        cur.close()
+        conn.close()
 
-    return [
-        {
-            "doctor_id": r[0],
-            "total_visits": int(r[1]) if r[1] else 0,
-        }
-        for r in rows
-    ]
+        return [
+            {
+                "doctor_id": r[0],
+                "total_visits": int(r[1]) if r[1] else 0,
+            }
+            for r in rows
+        ]
+    except Exception as e:
+        print(f"Error in get_doctor_workload: {str(e)}")
+        return []
