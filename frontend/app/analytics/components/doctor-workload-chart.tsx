@@ -13,26 +13,34 @@ import { DoctorWorkload } from "@/lib/api";
 
 interface DoctorWorkloadChartProps {
   data: DoctorWorkload[];
+  doctors: Map<number, string>;
 }
 
-export function DoctorWorkloadChart({ data }: DoctorWorkloadChartProps) {
-  const chartData = data.map((item) => ({
-    ...item,
-    doctor_id: `Dr. ${item.doctor_id}`,
-  }));
+export function DoctorWorkloadChart({ data, doctors }: DoctorWorkloadChartProps) {
+  // Take only top 10 doctors and reverse for better visualization (highest at bottom)
+  const chartData = data
+    .slice(0, 10)
+    .map((item) => ({
+      ...item,
+      doctor_name: doctors.get(item.doctor_id) || `Doctor ${item.doctor_id}`,
+    }))
+    .reverse();
 
   return (
-    <ResponsiveContainer width="100%" height={400}>
-      <BarChart data={chartData}>
+    <ResponsiveContainer width="100%" height={350}>
+      <BarChart 
+        data={chartData}
+        layout="vertical"
+        margin={{ top: 5, right: 30, left: 200, bottom: 5 }}
+      >
         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-        <XAxis
-          dataKey="doctor_id"
+        <XAxis type="number" stroke="hsl(var(--muted-foreground))" />
+        <YAxis 
+          dataKey="doctor_name" 
+          type="category" 
           stroke="hsl(var(--muted-foreground))"
-          angle={-45}
-          textAnchor="end"
-          height={80}
+          tick={{ fontSize: 12 }}
         />
-        <YAxis stroke="hsl(var(--muted-foreground))" />
         <Tooltip
           contentStyle={{
             backgroundColor: "hsl(var(--card))",
@@ -41,9 +49,9 @@ export function DoctorWorkloadChart({ data }: DoctorWorkloadChartProps) {
             color: "hsl(var(--foreground))",
           }}
           cursor={{ fill: "hsl(var(--accent))", opacity: 0.1 }}
-          formatter={(value) => `${value} visits`}
+          formatter={(value) => [`${value} visits`, "Total Visits"]}
         />
-        <Bar dataKey="total_visits" fill="hsl(var(--accent))" radius={[8, 8, 0, 0]} />
+        <Bar dataKey="total_visits" fill="hsl(var(--accent))" radius={[0, 8, 8, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

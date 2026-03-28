@@ -12,6 +12,7 @@ import { DepartmentLoad } from "@/lib/api";
 
 interface DepartmentLoadChartProps {
   data: DepartmentLoad[];
+  departments: Map<number, string>;
 }
 
 const COLORS = [
@@ -24,11 +25,14 @@ const COLORS = [
   "#06b6d4",
 ];
 
-export function DepartmentLoadChart({ data }: DepartmentLoadChartProps) {
+export function DepartmentLoadChart({ data, departments }: DepartmentLoadChartProps) {
+  const totalVisits = data.reduce((sum, item) => sum + item.total_visits, 0);
+  
   const chartData = data.map((item) => ({
     ...item,
-    name: `Dept. ${item.department_id}`,
+    name: departments.get(item.department_id) || `Department ${item.department_id}`,
     value: item.total_visits,
+    percentage: totalVisits > 0 ? ((item.total_visits / totalVisits) * 100).toFixed(1) : 0,
   }));
 
   return (
@@ -39,7 +43,7 @@ export function DepartmentLoadChart({ data }: DepartmentLoadChartProps) {
           cx="50%"
           cy="50%"
           labelLine={false}
-          label={({ name, value }) => `${name}: ${value}`}
+          label={({ name, percentage }) => `${name}: ${percentage}%`}
           outerRadius={80}
           fill="#8884d8"
           dataKey="value"
@@ -55,7 +59,7 @@ export function DepartmentLoadChart({ data }: DepartmentLoadChartProps) {
             borderRadius: "8px",
             color: "hsl(var(--foreground))",
           }}
-          formatter={(value) => `${value} visits`}
+          formatter={(value, name, props) => [`${value} visits`, "Total"]}
         />
         <Legend
           wrapperStyle={{

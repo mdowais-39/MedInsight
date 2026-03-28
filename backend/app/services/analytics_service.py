@@ -135,3 +135,44 @@ def get_doctor_workload():
     except Exception as e:
         print(f"Error in get_doctor_workload: {str(e)}")
         return []
+
+
+def get_kpis():
+    """Get key performance indicators: total patients, doctors, appointments, visits"""
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+
+        # Get total patients
+        cur.execute("SELECT COUNT(*) FROM Patients;")
+        total_patients = cur.fetchone()[0] or 0
+
+        # Get total doctors
+        cur.execute("SELECT COUNT(*) FROM Doctors;")
+        total_doctors = cur.fetchone()[0] or 0
+
+        # Get total appointments
+        cur.execute("SELECT COUNT(*) FROM Appointments;")
+        total_appointments = cur.fetchone()[0] or 0
+
+        # Get total visits
+        cur.execute("SELECT COUNT(*) FROM Visits;")
+        total_visits = cur.fetchone()[0] or 0
+
+        cur.close()
+        conn.close()
+
+        return {
+            "total_patients": int(total_patients),
+            "total_doctors": int(total_doctors),
+            "total_appointments": int(total_appointments),
+            "total_visits": int(total_visits),
+        }
+    except Exception as e:
+        print(f"Error in get_kpis: {str(e)}")
+        return {
+            "total_patients": 0,
+            "total_doctors": 0,
+            "total_appointments": 0,
+            "total_visits": 0,
+        }

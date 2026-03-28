@@ -38,6 +38,12 @@ export interface DoctorResponse {
   doctor_id: number;
 }
 
+export interface Doctor {
+  doctor_id: number;
+  name: string;
+  specialization: string;
+}
+
 export interface DoctorDetails {
   doctor_id: number;
   name: string;
@@ -197,6 +203,9 @@ export const patientAPI = {
 // ─── Doctor APIs ───────────────────────────────────────────────────────────
 
 export const doctorAPI = {
+  getAll: () =>
+    apiRequest<Doctor[]>("/doctors/"),
+
   register: (data: DoctorRegister) =>
     apiRequest<DoctorResponse>("/doctors/register", {
       method: "POST",
@@ -282,7 +291,17 @@ export interface DoctorWorkload {
   total_visits: number;
 }
 
+export interface KPIs {
+  total_patients: number;
+  total_doctors: number;
+  total_appointments: number;
+  total_visits: number;
+}
+
 export const analyticsAPI = {
+  getKPIs: () =>
+    apiRequest<KPIs>("/analytics/kpis"),
+
   getTopDoctors: () =>
     apiRequest<TopDoctor[]>("/analytics/top-doctors"),
 

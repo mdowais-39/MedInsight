@@ -4,6 +4,7 @@ from app.services.analytics_service import (
     get_department_load,
     get_monthly_visits,
     get_doctor_workload,
+    get_kpis,
 )
 
 
@@ -35,3 +36,9 @@ def list_monthly_visits():
 def list_doctor_workload():
     """Get total visits per doctor"""
     return get_doctor_workload()
+
+
+@router.get("/kpis")
+def list_kpis():
+    """Get key performance indicators"""
+    return get_kpis()
