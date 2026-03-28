@@ -883,3 +883,31 @@ GROUP BY
 ### 7. Analytics Queries
 
 - warehouse.analytics_queries.sql
+
+
+-----------------------------------------------------------
+
+## Phase 8 - Debugging
+
+### 1. Unqiue pid constraint while registration of patient
+
+- Inserting a already existing pid in the patient table 
+- PostgreSQL uses a sequence for auto-increment:
+***nextval('patients_patient_id_seq')***
+But your ETL inserted IDs manually → sequence is out of sync.
+
+
+Fix - Reset sequence
+SELECT setval(
+    'patients_patient_id_seq',
+    (SELECT MAX(patient_id) FROM patients)
+);
+
+- Postgres **starts counting** from the **last inserted id**
+
+*** Classic DBMS issue***
+- Manual ID insertion + auto-increment sequence mismatch
+
+
+
+
