@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { Activity, ArrowLeft } from "lucide-react";
+import { Activity, ArrowLeft, Filter, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { TopDoctorsChart } from "./components/top-doctors-chart";
 import { DepartmentLoadChart } from "./components/department-load-chart";
 import { MonthlyVisitsChart } from "./components/monthly-visits-chart";
@@ -16,9 +19,34 @@ import {
   DepartmentLoad,
   MonthlyVisit,
   DoctorWorkload,
+  AnalyticsFilters,
 } from "@/lib/api";
 
+// Month names for display
+const MONTHS = [
+  { value: "1", label: "January" },
+  { value: "2", label: "February" },
+  { value: "3", label: "March" },
+  { value: "4", label: "April" },
+  { value: "5", label: "May" },
+  { value: "6", label: "June" },
+  { value: "7", label: "July" },
+  { value: "8", label: "August" },
+  { value: "9", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
+
+// Generate year options (last 5 years)
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: 5 }, (_, i) => ({
+  value: String(currentYear - i),
+  label: String(currentYear - i),
+}));
+
 export default function AnalyticsDashboard() {
+  // Analytics data state
   const [topDoctors, setTopDoctors] = useState<TopDoctor[]>([]);
   const [departmentLoad, setDepartmentLoad] = useState<DepartmentLoad[]>([]);
   const [monthlyVisits, setMonthlyVisits] = useState<MonthlyVisit[]>([]);
@@ -27,56 +55,93 @@ export default function AnalyticsDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Filter state (isolated to this page only)
+  const [selectedYear, setSelectedYear] = useState<string>("");
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
+  const [selectedRole, setSelectedRole] = useState<"admin" | "doctor">("admin");
+  const [doctorId, setDoctorId] = useState<string>("");
+
+  // Build filters object from current state
+  const buildFilters = useCallback((): AnalyticsFilters => {
+    const filters: AnalyticsFilters = {};
+    if (selectedYear) filters.year = parseInt(selectedYear);
+    if (selectedMonth) filters.month = parseInt(selectedMonth);
+    if (selectedRole) filters.role = selectedRole;
+    if (selectedRole === "doctor" && doctorId) {
+      filters.doctor_id = parseInt(doctorId);
+    }
+    return filters;
+  }, [selectedYear, selectedMonth, selectedRole, doctorId]);
+
+  // Fetch analytics data with current filters
+  const fetchAnalyticsData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const filters = buildFilters();
+
+      const [topDoctorsData, departmentLoadData, monthlyVisitsData, doctorWorkloadData] =
+        await Promise.all([
+          analyticsAPI.getTopDoctorsFiltered(filters),
+          analyticsAPI.getDepartmentLoadFiltered(filters),
+          analyticsAPI.getMonthlyVisitsFiltered(filters),
+          analyticsAPI.getDoctorWorkloadFiltered(filters),
+        ]);
+
+      setTopDoctors(topDoctorsData);
+      setDepartmentLoad(departmentLoadData);
+      setMonthlyVisits(monthlyVisitsData);
+      setDoctorWorkload(doctorWorkloadData);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Failed to load analytics data";
+      setError(errorMsg);
+      
+      // Use mock data for demonstration when API is unavailable
+      setTopDoctors([
+        { doctor_id: 1, total_appointments: 45 },
+        { doctor_id: 2, total_appointments: 38 },
+        { doctor_id: 3, total_appointments: 32 },
+      ]);
+      setDepartmentLoad([
+        { department_id: 1, total_visits: 120 },
+        { department_id: 2, total_visits: 95 },
+        { department_id: 3, total_visits: 78 },
+      ]);
+      setMonthlyVisits([
+        { year: 2024, month: 1, total_visits: 45 },
+        { year: 2024, month: 2, total_visits: 52 },
+        { year: 2024, month: 3, total_visits: 48 },
+      ]);
+      setDoctorWorkload([
+        { doctor_id: 1, total_visits: 85 },
+        { doctor_id: 2, total_visits: 72 },
+        { doctor_id: 3, total_visits: 68 },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }, [buildFilters]);
+
+  // Initial fetch and refetch when filters change
   useEffect(() => {
-    const fetchAnalyticsData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const [topDoctorsData, departmentLoadData, monthlyVisitsData, doctorWorkloadData] =
-          await Promise.all([
-            analyticsAPI.getTopDoctors(),
-            analyticsAPI.getDepartmentLoad(),
-            analyticsAPI.getMonthlyVisits(),
-            analyticsAPI.getDoctorWorkload(),
-          ]);
-
-        setTopDoctors(topDoctorsData);
-        setDepartmentLoad(departmentLoadData);
-        setMonthlyVisits(monthlyVisitsData);
-        setDoctorWorkload(doctorWorkloadData);
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : "Failed to load analytics data";
-        setError(errorMsg);
-        
-        // Use mock data for demonstration when API is unavailable
-        setTopDoctors([
-          { doctor_id: 1, total_appointments: 45 },
-          { doctor_id: 2, total_appointments: 38 },
-          { doctor_id: 3, total_appointments: 32 },
-        ]);
-        setDepartmentLoad([
-          { department_id: 1, total_visits: 120 },
-          { department_id: 2, total_visits: 95 },
-          { department_id: 3, total_visits: 78 },
-        ]);
-        setMonthlyVisits([
-          { year: 2024, month: 1, total_visits: 45 },
-          { year: 2024, month: 2, total_visits: 52 },
-          { year: 2024, month: 3, total_visits: 48 },
-        ]);
-        setDoctorWorkload([
-          { doctor_id: 1, total_visits: 85 },
-          { doctor_id: 2, total_visits: 72 },
-          { doctor_id: 3, total_visits: 68 },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchAnalyticsData();
-  }, []);
+  }, [fetchAnalyticsData]);
+
+  // Clear doctor_id when role changes to admin
+  useEffect(() => {
+    if (selectedRole === "admin") {
+      setDoctorId("");
+    }
+  }, [selectedRole]);
+
+  // Reset all filters
+  const resetFilters = () => {
+    setSelectedYear("");
+    setSelectedMonth("");
+    setSelectedRole("admin");
+    setDoctorId("");
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -106,6 +171,126 @@ export default function AnalyticsDashboard() {
             Hospital analytics and insights at a glance
           </p>
         </div>
+
+        {/* Filter Section */}
+        <Card className="mb-8">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Filter className="h-5 w-5" />
+              Filters
+            </CardTitle>
+            <CardDescription>
+              Filter analytics data by time period and role
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+              {/* Year Filter */}
+              <div className="space-y-2">
+                <Label htmlFor="year-filter">Year</Label>
+                <Select value={selectedYear || "all"} onValueChange={(v) => setSelectedYear(v === "all" ? "" : v)}>
+                  <SelectTrigger id="year-filter">
+                    <SelectValue placeholder="All Years" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Years</SelectItem>
+                    {YEARS.map((year) => (
+                      <SelectItem key={year.value} value={year.value}>
+                        {year.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Month Filter */}
+              <div className="space-y-2">
+                <Label htmlFor="month-filter">Month</Label>
+                <Select value={selectedMonth || "all"} onValueChange={(v) => setSelectedMonth(v === "all" ? "" : v)}>
+                  <SelectTrigger id="month-filter">
+                    <SelectValue placeholder="All Months" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Months</SelectItem>
+                    {MONTHS.map((month) => (
+                      <SelectItem key={month.value} value={month.value}>
+                        {month.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Role Filter */}
+              <div className="space-y-2">
+                <Label htmlFor="role-filter">Role</Label>
+                <Select value={selectedRole} onValueChange={(value: "admin" | "doctor") => setSelectedRole(value)}>
+                  <SelectTrigger id="role-filter">
+                    <SelectValue placeholder="Select Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin (Full Data)</SelectItem>
+                    <SelectItem value="doctor">Doctor (Specific)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Doctor ID Filter (only shown when role is doctor) */}
+              <div className="space-y-2">
+                <Label htmlFor="doctor-id-filter">Doctor ID</Label>
+                <Input
+                  id="doctor-id-filter"
+                  type="number"
+                  placeholder="Enter Doctor ID"
+                  value={doctorId}
+                  onChange={(e) => setDoctorId(e.target.value)}
+                  disabled={selectedRole !== "doctor"}
+                  className={selectedRole !== "doctor" ? "opacity-50" : ""}
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={resetFilters}
+                  className="flex-1"
+                >
+                  Reset
+                </Button>
+                <Button
+                  onClick={() => fetchAnalyticsData()}
+                  disabled={loading}
+                  className="flex-1"
+                >
+                  {loading ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Refresh
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Active Filters Summary */}
+            {(selectedYear || selectedMonth || selectedRole === "doctor") && (
+              <div className="mt-4 pt-4 border-t border-border">
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium">Active Filters:</span>{" "}
+                  {selectedRole === "doctor" && doctorId && `Doctor ID: ${doctorId}`}
+                  {selectedRole === "doctor" && doctorId && (selectedYear || selectedMonth) && " | "}
+                  {selectedYear && `Year: ${selectedYear}`}
+                  {selectedYear && selectedMonth && ", "}
+                  {selectedMonth && `Month: ${MONTHS.find(m => m.value === selectedMonth)?.label}`}
+                  {selectedRole === "admin" && !selectedYear && !selectedMonth && "None (showing all data)"}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {error && (
           <Card className="border-destructive/50 bg-destructive/10 mb-8">

@@ -328,9 +328,30 @@ export const appointmentAPI = {
     apiRequest<DoctorAppointment[]>(`/appointments/doctor/${doctorId}`),
 };
 
+// ─── Analytics Filter Types ────────────────────────────────────────────────
+
+export interface AnalyticsFilters {
+  role?: "admin" | "doctor";
+  doctor_id?: number;
+  month?: number;
+  year?: number;
+}
+
+// Helper to build query string from filters
+function buildQueryString(filters: AnalyticsFilters): string {
+  const params = new URLSearchParams();
+  if (filters.role) params.append("role", filters.role);
+  if (filters.doctor_id) params.append("doctor_id", filters.doctor_id.toString());
+  if (filters.month) params.append("month", filters.month.toString());
+  if (filters.year) params.append("year", filters.year.toString());
+  const queryString = params.toString();
+  return queryString ? `?${queryString}` : "";
+}
+
 // ─── Analytics APIs ────────────────────────────────────────────────────────
 
 export const analyticsAPI = {
+  // Legacy methods (without filters) for backwards compatibility
   getTopDoctors: () =>
     apiRequest<TopDoctor[]>("/analytics/top-doctors"),
 
@@ -342,5 +363,18 @@ export const analyticsAPI = {
 
   getDoctorWorkload: () =>
     apiRequest<DoctorWorkload[]>("/analytics/doctor-workload"),
+
+  // New methods with filter support
+  getTopDoctorsFiltered: (filters: AnalyticsFilters) =>
+    apiRequest<TopDoctor[]>(`/analytics/top-doctors${buildQueryString(filters)}`),
+
+  getDepartmentLoadFiltered: (filters: AnalyticsFilters) =>
+    apiRequest<DepartmentLoad[]>(`/analytics/department-load${buildQueryString(filters)}`),
+
+  getMonthlyVisitsFiltered: (filters: AnalyticsFilters) =>
+    apiRequest<MonthlyVisit[]>(`/analytics/monthly-visits${buildQueryString(filters)}`),
+
+  getDoctorWorkloadFiltered: (filters: AnalyticsFilters) =>
+    apiRequest<DoctorWorkload[]>(`/analytics/doctor-workload${buildQueryString(filters)}`),
 };
 
