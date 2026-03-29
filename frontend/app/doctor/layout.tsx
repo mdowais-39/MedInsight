@@ -7,8 +7,11 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/lib/store";
 
+import { Calendar } from "lucide-react";
+
 const navItems = [
   { href: "/doctor", icon: Home, label: "Dashboard" },
+  { href: "/doctor/appointments", icon: Calendar, label: "Appointments" },
   { href: "/doctor/visits", icon: FileText, label: "Record Visit" },
   { href: "/doctor/prescriptions", icon: Pill, label: "Prescriptions" },
   { href: "/doctor/treatments", icon: Syringe, label: "Treatments" },

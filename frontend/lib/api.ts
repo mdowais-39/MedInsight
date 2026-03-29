@@ -326,13 +326,6 @@ export const appointmentAPI = {
 
   getByDoctor: (doctorId: number) =>
     apiRequest<DoctorAppointment[]>(`/appointments/doctor/${doctorId}`),
-
-  // Detailed appointments with visit info, prescriptions, and treatments
-  getDetailedByDoctor: (doctorId: number) =>
-    apiRequest<DoctorDetailedAppointment[]>(`/doctor/${doctorId}/appointments-detailed`),
-
-  getDetailedByPatient: (patientId: number) =>
-    apiRequest<PatientDetailedAppointment[]>(`/patient/${patientId}/appointments-detailed`),
 };
 
 // ─── Analytics APIs ────────────────────────────────────────────────────────

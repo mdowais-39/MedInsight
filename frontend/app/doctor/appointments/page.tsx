@@ -7,13 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { appointmentAPI, type PatientAppointment } from "@/lib/api";
+import { appointmentAPI, type DoctorAppointment } from "@/lib/api";
 import { useUserStore } from "@/lib/store";
 
-export default function AppointmentsPage() {
+export default function DoctorAppointmentsPage() {
   const router = useRouter();
   const { userId } = useUserStore();
-  const [appointments, setAppointments] = useState<PatientAppointment[]>([]);
+  const [appointments, setAppointments] = useState<DoctorAppointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,7 +22,7 @@ export default function AppointmentsPage() {
 
     const fetchAppointments = async () => {
       try {
-        const data = await appointmentAPI.getByPatient(userId);
+        const data = await appointmentAPI.getByDoctor(userId);
         setAppointments(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch appointments");
@@ -51,7 +51,7 @@ export default function AppointmentsPage() {
             <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium text-foreground">Please Login First</h3>
             <p className="text-muted-foreground mb-4">You need to be logged in to view appointments</p>
-            <Button onClick={() => router.push("/patient")}>Go to Login</Button>
+            <Button onClick={() => router.push("/doctor")}>Go to Login</Button>
           </CardContent>
         </Card>
       </div>
@@ -61,11 +61,9 @@ export default function AppointmentsPage() {
   if (isLoading) {
     return (
       <div className="space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">My Appointments</h1>
-            <p className="text-muted-foreground mt-1">Your Patient ID: {userId}</p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">My Appointments</h1>
+          <p className="text-muted-foreground mt-1">Your Doctor ID: {userId}</p>
         </div>
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
@@ -77,9 +75,6 @@ export default function AppointmentsPage() {
                 </div>
                 <Skeleton className="h-4 w-48 mt-2" />
               </CardHeader>
-              <CardContent>
-                <Skeleton className="h-4 w-full" />
-              </CardContent>
             </Card>
           ))}
         </div>
@@ -89,15 +84,9 @@ export default function AppointmentsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">My Appointments</h1>
-          <p className="text-muted-foreground mt-1">Your Patient ID: {userId}</p>
-        </div>
-        <Button onClick={() => router.push("/patient/doctors")}>
-          <Calendar className="h-4 w-4 mr-2" />
-          Book New Appointment
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">My Appointments</h1>
+        <p className="text-muted-foreground mt-1">Your Doctor ID: {userId}</p>
       </div>
 
       {error && (
@@ -113,8 +102,7 @@ export default function AppointmentsPage() {
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium text-foreground">No Appointments Yet</h3>
-            <p className="text-muted-foreground mb-4">You haven&apos;t booked any appointments</p>
-            <Button onClick={() => router.push("/patient/departments")}>Browse Departments</Button>
+            <p className="text-muted-foreground">Your appointments will appear here when patients book with you</p>
           </CardContent>
         </Card>
       ) : (
@@ -127,11 +115,18 @@ export default function AppointmentsPage() {
                     <CardTitle className="text-base">Appointment #{apt.appointment_id}</CardTitle>
                     <Badge variant={statusColor(apt.status)}>{apt.status}</Badge>
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push("/doctor/visits")}
+                  >
+                    Record Visit
+                  </Button>
                 </div>
                 <CardDescription className="flex flex-wrap items-center gap-4 mt-2">
                   <span className="flex items-center gap-1">
                     <User className="h-3.5 w-3.5" />
-                    Dr. {apt.doctor_name} (ID: {apt.doctor_id})
+                    {apt.patient_name} (ID: {apt.patient_id})
                   </span>
                   <span className="flex items-center gap-1">
                     <Calendar className="h-3.5 w-3.5" />
