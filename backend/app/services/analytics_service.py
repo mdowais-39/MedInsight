@@ -2,19 +2,40 @@ from app.db_connection import get_connection
 
 
 # 1. Top doctors (most appointments)
-def get_top_doctors():
+def get_top_doctors(role="admin", doctor_id=None, month=None, year=None):
 
     conn = get_connection()
     cur = conn.cursor()
 
     query = """
-    SELECT doctor_id, total_appointments
+    SELECT doctor_id, SUM(total_appointments)
     FROM mv_top_doctors
-    ORDER BY total_appointments DESC
+    WHERE 1=1
+    """
+
+    params = []
+
+    # Role restriction
+    if role == "doctor":
+        query += " AND doctor_id = %s"
+        params.append(doctor_id)
+
+    # Filters
+    if month is not None:
+        query += " AND month = %s"
+        params.append(month)
+
+    if year is not None:
+        query += " AND year = %s"
+        params.append(year)
+
+    query += """
+    GROUP BY doctor_id
+    ORDER BY SUM(total_appointments) DESC
     LIMIT 10;
     """
 
-    cur.execute(query)
+    cur.execute(query, params)
     rows = cur.fetchall()
 
     cur.close()
@@ -27,18 +48,29 @@ def get_top_doctors():
 
 
 # 2. Department load
-def get_department_load():
+def get_department_load(year=None):
 
     conn = get_connection()
     cur = conn.cursor()
 
     query = """
-    SELECT department_id, total_visits
+    SELECT department_id, SUM(total_visits)
     FROM mv_department_load
-    ORDER BY total_visits DESC;
+    WHERE 1=1
     """
 
-    cur.execute(query)
+    params = []
+
+    if year is not None:
+        query += " AND year = %s"
+        params.append(year)
+
+    query += """
+    GROUP BY department_id
+    ORDER BY SUM(total_visits) DESC;
+    """
+
+    cur.execute(query, params)
     rows = cur.fetchall()
 
     cur.close()
@@ -51,7 +83,7 @@ def get_department_load():
 
 
 # 3. Monthly visits
-def get_monthly_visits():
+def get_monthly_visits(year=None, month=None):
 
     conn = get_connection()
     cur = conn.cursor()
@@ -59,10 +91,24 @@ def get_monthly_visits():
     query = """
     SELECT year, month, total_visits
     FROM mv_monthly_visits
-    ORDER BY year, month;
+    WHERE 1=1
     """
 
-    cur.execute(query)
+    params = []
+
+    # Filter by year
+    if year is not None:
+        query += " AND year = %s"
+        params.append(year)
+
+    # Filter by month
+    if month is not None:
+        query += " AND month = %s"
+        params.append(month)
+
+    query += " ORDER BY year, month;"
+
+    cur.execute(query, params)
     rows = cur.fetchall()
 
     cur.close()
@@ -70,8 +116,8 @@ def get_monthly_visits():
 
     return [
         {
-            "year": r[0],
-            "month": r[1],
+            "year": int(r[0]),
+            "month": int(r[1]),
             "total_visits": r[2]
         }
         for r in rows
@@ -79,18 +125,34 @@ def get_monthly_visits():
 
 
 # 4. Doctor workload
-def get_doctor_workload():
+def get_doctor_workload(role="admin", doctor_id=None, year=None):
 
     conn = get_connection()
     cur = conn.cursor()
 
     query = """
-    SELECT doctor_id, total_visits
+    SELECT doctor_id, SUM(total_visits)
     FROM mv_doctor_workload
-    ORDER BY total_visits DESC;
+    WHERE 1=1
     """
 
-    cur.execute(query)
+    params = []
+
+    # Doctor can only see their own data
+    if role == "doctor":
+        query += " AND doctor_id = %s"
+        params.append(doctor_id)
+
+    if year is not None:
+        query += " AND year = %s"
+        params.append(year)
+
+    query += """
+    GROUP BY doctor_id
+    ORDER BY SUM(total_visits) DESC;
+    """
+
+    cur.execute(query, params)
     rows = cur.fetchall()
 
     cur.close()

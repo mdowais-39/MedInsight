@@ -975,7 +975,10 @@ Import the ***analytics_router*** in the main.py
 
 - All the **analytics working fine**
 
-## Phase 10 - Redis and dynamic queries
+---------------------------------------------------------
+
+
+## Phase 10 - Role based dynamic queries, querey filtering , MV's
 
 ### 1. Materialized Views (Pre-Aggregation)
 
@@ -1016,8 +1019,141 @@ REFRESH MATERIALIZED VIEW mv_doctor_workload;
 analytics_routes.py - having the route to the ***get_views*** function in the ***analytics_service.py***
 
 - Test
+EXPLAIN ANALYZE
+SELECT * FROM mv_top_doctors;
+- Very fast Execution
+                                                QUERY PLAN          
+
+-------------------------------------------------------------------------------------------------------------
+ Seq Scan on mv_top_doctors  (cost=0.00..4.01 rows=201 width=12) (actual time=0.012..0.019 rows=201 loops=1)
+ Planning Time: 0.938 ms
+ Execution Time: 0.046 ms
+(3 rows)
+
+**Architecture**
+Frontend
+   ↓
+FastAPI
+   ↓
+Materialized Views  ← NEW
+   ↓
+Warehouse Tables
+   ↓
+OLTP Data
+
+### 3. REDIS Caching
+
+Without Redis:
+Frontend → API → DB (every time) ❌
+
+With Redis:
+Frontend → API → Redis (instant) ✅
+                   ↓ (if miss)
+                   DB → Cache → Return
+
+- **Leaving as of noww **
+
+### 4. Filtered Analytics
+
+- Building **dynamic analytics api's**
+
+/analytics/top-doctors?month=4&year=2026
+/analytics/department-load?year=2026
+/analytics/monthly-visits?year=2026
+/analytics/doctor-workload?doctor_id=5
+
+Example:
+@router.get("/top-doctors")
+def top_doctors(month: int = None, year: int = None):
+    return get_top_doctors(month, year)
+
+- Service Layer - Proper Query Builder platform
+Base Query + Dynamic Filters + Safe Parameters
+
+- Creating new materialized views: **Filterable MV's**
+
+- warehouse/materialized_views.sql
+
+- \i warehouse/materialized_views.sql
 
 
+Now we have for analytics query as:
+Materialized Views → Pre-aggregated
++
+Filters → Dynamic slicing
++
+Backend → Efficient queries
 
+**Final Architecture**
+Frontend Filters
+      ↓
+FastAPI (Filtered APIs)
+      ↓
+Materialized Views (Precomputed + Filterable)
+      ↓
+Warehouse Tables
+      ↓
+OLTP Data
 
+### 5. Role Based Analytics
+
+Controlling analytics output based on user role
+
+Admin	All analytics
+Doctor	Only their own data
+
+role → query parameter
+doctor_id → query parameter (if role=doctor)
+
+Example:
+/analytics/doctor-workload?role=doctor&doctor_id=5
+/analytics/top-doctors?role=admin
+
+- Updating the api routes - only the top doctors and doctor workload
+
+- Updating the Service layer
+
+- **Role Based Rules**
+
+Admin Access
+GET /analytics/top-doctors?role=admin
+- Returns all doctors
+
+🔹 Doctor Access
+GET /analytics/top-doctors?role=doctor&doctor_id=5
+- Returns ONLY doctor 5
+
+🔹 Doctor Workload
+GET /analytics/doctor-workload?role=doctor&doctor_id=5
+- Only their workload
+
+🔹 Unauthorized Case (IMPORTANT)
+GET /analytics/doctor-workload?role=doctor
+- Should fail → missing doctor_id
+
+Right now:
+role passed via query → NOT secure
+Later (future):
+JWT authentication → secure role handling
+
+**Final Architecture**
+Frontend (role-based UI)
+        ↓
+FastAPI (role-aware APIs)
+        ↓
+Materialized Views
+        ↓
+Warehouse
+        ↓
+OLTP
+
+**System now supports**
+✔ OLTP (transactions)
+✔ OLAP (analytics)
+✔ ETL pipeline
+✔ Materialized views
+✔ Filtered queries
+✔ Role-based analytics
+
+----------------------------------------------------------
 

@@ -13,8 +13,13 @@ router = APIRouter(
 )
 
 @router.get("/top-doctors")
-def top_doctors(month: int = None, year: int = None):
-    return get_top_doctors(month, year)
+def top_doctors(
+    role: str = "admin",
+    doctor_id: int = None,
+    month: int = None,
+    year: int = None
+):
+    return get_top_doctors(role, doctor_id, month, year)
 
 @router.get("/department-load")
 def department_load(year: int = None):
@@ -25,8 +30,12 @@ def monthly_visits(year: int = None, month: int = None):
     return get_monthly_visits(year, month)
 
 @router.get("/doctor-workload")
-def doctor_workload(doctor_id: int = None):
-    return get_doctor_workload(doctor_id)
+def doctor_workload(
+    role: str = "admin",
+    doctor_id: int = None,
+    year: int = None
+):
+    return get_doctor_workload(role, doctor_id, year)
 
 @router.post("/refresh")
 def refresh_views():
