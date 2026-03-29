@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, Stethoscope, Users, Calendar, ClipboardList, Shield } from "lucide-react";
+import { Activity, Stethoscope, Users, Calendar, ClipboardList, Shield, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -46,6 +46,10 @@ export default function HomePage() {
             </Link>
             <Link href="#portals" className="text-muted-foreground hover:text-foreground transition-colors">
               Portals
+            </Link>
+            <Link href="/analytics" className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+              <BarChart3 className="h-4 w-4" />
+              Analytics
             </Link>
           </nav>
         </div>

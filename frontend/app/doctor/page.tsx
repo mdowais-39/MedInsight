@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, LogIn, Calendar, FileText, Pill, Syringe, AlertCircle } from "lucide-react";
+import { UserPlus, LogIn, Calendar, FileText, Pill, Syringe, AlertCircle, ChevronDown, ChevronUp, User, Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { doctorAPI, departmentAPI, type DoctorRegister, type Department } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Skeleton } from "@/components/ui/skeleton";
+import { doctorAPI, departmentAPI, appointmentAPI, type DoctorRegister, type Department, type DoctorDetailedAppointment } from "@/lib/api";
 import { useUserStore } from "@/lib/store";
 
 export default function DoctorDashboard() {
@@ -30,6 +33,12 @@ export default function DoctorDashboard() {
     email: "",
   });
 
+  // Detailed appointments state
+  const [detailedAppointments, setDetailedAppointments] = useState<DoctorDetailedAppointment[]>([]);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
+  const [appointmentsError, setAppointmentsError] = useState<string | null>(null);
+  const [expandedAppointments, setExpandedAppointments] = useState<Set<number>>(new Set());
+
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
@@ -42,6 +51,47 @@ export default function DoctorDashboard() {
 
     fetchDepartments();
   }, []);
+
+  // Fetch detailed appointments when logged in
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchDetailedAppointments = async () => {
+      setAppointmentsLoading(true);
+      setAppointmentsError(null);
+      try {
+        const data = await appointmentAPI.getDetailedByDoctor(userId);
+        setDetailedAppointments(data);
+      } catch (err) {
+        setAppointmentsError(err instanceof Error ? err.message : "Failed to fetch appointments");
+      } finally {
+        setAppointmentsLoading(false);
+      }
+    };
+
+    fetchDetailedAppointments();
+  }, [userId]);
+
+  const toggleAppointment = (appointmentId: number) => {
+    setExpandedAppointments((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(appointmentId)) {
+        newSet.delete(appointmentId);
+      } else {
+        newSet.add(appointmentId);
+      }
+      return newSet;
+    });
+  };
+
+  const statusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "scheduled": return "default";
+      case "completed": return "secondary";
+      case "cancelled": return "destructive";
+      default: return "outline";
+    }
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,6 +198,176 @@ export default function DoctorDashboard() {
               </CardHeader>
             </Card>
           </div>
+        </div>
+
+        {/* Detailed Appointments Section */}
+        <div>
+          <h2 className="text-xl font-semibold text-foreground mb-4">My Appointments</h2>
+          
+          {appointmentsError && (
+            <Card className="border-destructive mb-4">
+              <CardContent className="py-4 text-destructive text-sm">
+                {appointmentsError}. Make sure the backend server is running.
+              </CardContent>
+            </Card>
+          )}
+
+          {appointmentsLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Card key={i}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-5 w-32" />
+                      <Skeleton className="h-5 w-20" />
+                    </div>
+                    <Skeleton className="h-4 w-48 mt-2" />
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-4 w-full" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : detailedAppointments.length === 0 && !appointmentsError ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium text-foreground">No Appointments Yet</h3>
+                <p className="text-muted-foreground">Your appointments will appear here</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {detailedAppointments.map((apt) => (
+                <Card key={apt.appointment_id} className="hover:shadow-md transition-all">
+                  <Collapsible
+                    open={expandedAppointments.has(apt.appointment_id)}
+                    onOpenChange={() => toggleAppointment(apt.appointment_id)}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <CardTitle className="text-base">Appointment #{apt.appointment_id}</CardTitle>
+                          <Badge variant={statusColor(apt.status)}>{apt.status}</Badge>
+                        </div>
+                        <CollapsibleTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            {expandedAppointments.has(apt.appointment_id) ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
+                            <span className="ml-1 text-sm">
+                              {expandedAppointments.has(apt.appointment_id) ? "Hide Details" : "View Details"}
+                            </span>
+                          </Button>
+                        </CollapsibleTrigger>
+                      </div>
+                      <CardDescription className="flex flex-wrap items-center gap-4 mt-2">
+                        <span className="flex items-center gap-1">
+                          <User className="h-3.5 w-3.5" />
+                          {apt.patient_name} (ID: {apt.patient_id})
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {apt.appointment_date}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5" />
+                          {apt.appointment_time}
+                        </span>
+                      </CardDescription>
+                    </CardHeader>
+
+                    <CollapsibleContent>
+                      <CardContent className="pt-0 space-y-4">
+                        {apt.visit ? (
+                          <>
+                            {/* Visit Info */}
+                            <div className="rounded-lg bg-muted/50 p-4 space-y-2">
+                              <h4 className="font-medium text-foreground flex items-center gap-2">
+                                <FileText className="h-4 w-4 text-accent" />
+                                Visit Information
+                              </h4>
+                              <div className="grid sm:grid-cols-2 gap-3 text-sm">
+                                <div>
+                                  <span className="text-muted-foreground">Diagnosis:</span>
+                                  <p className="font-medium text-foreground">{apt.visit.diagnosis || "N/A"}</p>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Visit Date:</span>
+                                  <p className="font-medium text-foreground">{apt.visit.visit_date || "N/A"}</p>
+                                </div>
+                                {apt.visit.notes && (
+                                  <div className="sm:col-span-2">
+                                    <span className="text-muted-foreground">Notes:</span>
+                                    <p className="font-medium text-foreground">{apt.visit.notes}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Prescriptions */}
+                            {apt.visit.prescriptions && apt.visit.prescriptions.length > 0 && (
+                              <div className="rounded-lg bg-muted/50 p-4 space-y-2">
+                                <h4 className="font-medium text-foreground flex items-center gap-2">
+                                  <Pill className="h-4 w-4 text-accent" />
+                                  Prescriptions
+                                </h4>
+                                <div className="space-y-2">
+                                  {apt.visit.prescriptions.map((prescription) => (
+                                    <div key={prescription.prescription_id} className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm bg-background rounded-md p-2">
+                                      <span className="font-medium text-foreground">{prescription.medicine_name}</span>
+                                      <span className="text-muted-foreground">Dosage: {prescription.dosage}</span>
+                                      <span className="text-muted-foreground">Duration: {prescription.duration_days} days</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Treatments */}
+                            {apt.visit.treatments && apt.visit.treatments.length > 0 && (
+                              <div className="rounded-lg bg-muted/50 p-4 space-y-2">
+                                <h4 className="font-medium text-foreground flex items-center gap-2">
+                                  <Syringe className="h-4 w-4 text-accent" />
+                                  Treatments
+                                </h4>
+                                <div className="space-y-2">
+                                  {apt.visit.treatments.map((treatment) => (
+                                    <div key={treatment.treatment_id} className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm bg-background rounded-md p-2">
+                                      <span className="font-medium text-foreground">{treatment.treatment_type}</span>
+                                      <span className="text-muted-foreground">Cost: ${treatment.treatment_cost}</span>
+                                      {treatment.treatment_notes && (
+                                        <span className="text-muted-foreground">Notes: {treatment.treatment_notes}</span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="rounded-lg bg-muted/50 p-4 text-center">
+                            <p className="text-muted-foreground text-sm">No visit recorded yet for this appointment</p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mt-2"
+                              onClick={() => router.push("/doctor/visits")}
+                            >
+                              Record Visit
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Workflow Guide */}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, Home, Building2, Users, Calendar, LogOut } from "lucide-react";
+import { Activity, Home, Building2, Users, Calendar, LogOut, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/lib/store";
@@ -12,6 +12,7 @@ const navItems = [
   { href: "/patient/departments", icon: Building2, label: "Departments" },
   { href: "/patient/doctors", icon: Users, label: "Doctors" },
   { href: "/patient/appointments", icon: Calendar, label: "Appointments" },
+  { href: "/analytics", icon: BarChart3, label: "Analytics" },
 ];
 
 export default function PatientLayout({

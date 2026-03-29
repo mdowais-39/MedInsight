@@ -160,6 +160,75 @@ export interface VisitDetails {
   treatments: VisitTreatment[];
 }
 
+// ─── Detailed Appointment Types ────────────────────────────────────────────
+
+export interface DetailedPrescription {
+  prescription_id: number;
+  medicine_name: string;
+  dosage: string;
+  duration_days: number;
+}
+
+export interface DetailedTreatment {
+  treatment_id: number;
+  treatment_type: string;
+  treatment_cost: number;
+  treatment_notes?: string;
+}
+
+export interface DetailedVisit {
+  visit_id: number;
+  diagnosis: string;
+  notes: string;
+  visit_date: string;
+  prescriptions: DetailedPrescription[];
+  treatments: DetailedTreatment[];
+}
+
+export interface DoctorDetailedAppointment {
+  appointment_id: number;
+  patient_id: number;
+  patient_name: string;
+  appointment_date: string;
+  appointment_time: string;
+  status: string;
+  visit?: DetailedVisit;
+}
+
+export interface PatientDetailedAppointment {
+  appointment_id: number;
+  doctor_id: number;
+  doctor_name: string;
+  doctor_specialization?: string;
+  appointment_date: string;
+  appointment_time: string;
+  status: string;
+  visit?: DetailedVisit;
+}
+
+// ─── Analytics Types ───────────────────────────────────────────────────────
+
+export interface TopDoctor {
+  doctor_id: number;
+  total_appointments: number;
+}
+
+export interface DepartmentLoad {
+  department_id: number;
+  total_visits: number;
+}
+
+export interface MonthlyVisit {
+  year: number;
+  month: number;
+  total_visits: number;
+}
+
+export interface DoctorWorkload {
+  doctor_id: number;
+  total_visits: number;
+}
+
 // ─── API Helper ────────────────────────────────────────────────────────────
 
 async function apiRequest<T>(
@@ -257,5 +326,28 @@ export const appointmentAPI = {
 
   getByDoctor: (doctorId: number) =>
     apiRequest<DoctorAppointment[]>(`/appointments/doctor/${doctorId}`),
+
+  // Detailed appointments with visit info, prescriptions, and treatments
+  getDetailedByDoctor: (doctorId: number) =>
+    apiRequest<DoctorDetailedAppointment[]>(`/doctor/${doctorId}/appointments-detailed`),
+
+  getDetailedByPatient: (patientId: number) =>
+    apiRequest<PatientDetailedAppointment[]>(`/patient/${patientId}/appointments-detailed`),
+};
+
+// ─── Analytics APIs ────────────────────────────────────────────────────────
+
+export const analyticsAPI = {
+  getTopDoctors: () =>
+    apiRequest<TopDoctor[]>("/analytics/top-doctors"),
+
+  getDepartmentLoad: () =>
+    apiRequest<DepartmentLoad[]>("/analytics/department-load"),
+
+  getMonthlyVisits: () =>
+    apiRequest<MonthlyVisit[]>("/analytics/monthly-visits"),
+
+  getDoctorWorkload: () =>
+    apiRequest<DoctorWorkload[]>("/analytics/doctor-workload"),
 };
 
