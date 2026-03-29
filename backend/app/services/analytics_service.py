@@ -8,9 +8,8 @@ def get_top_doctors():
     cur = conn.cursor()
 
     query = """
-    SELECT doctor_id, COUNT(*) AS total_appointments
-    FROM Appointments
-    GROUP BY doctor_id
+    SELECT doctor_id, total_appointments
+    FROM mv_top_doctors
     ORDER BY total_appointments DESC
     LIMIT 10;
     """
@@ -34,10 +33,9 @@ def get_department_load():
     cur = conn.cursor()
 
     query = """
-    SELECT department_id, SUM(total_visits)
-    FROM FactVisits
-    GROUP BY department_id
-    ORDER BY SUM(total_visits) DESC;
+    SELECT department_id, total_visits
+    FROM mv_department_load
+    ORDER BY total_visits DESC;
     """
 
     cur.execute(query)
@@ -59,12 +57,9 @@ def get_monthly_visits():
     cur = conn.cursor()
 
     query = """
-    SELECT t.year, t.month, SUM(f.total_visits)
-    FROM FactVisits f
-    JOIN DimTime t
-    ON f.appointment_date = t.date
-    GROUP BY t.year, t.month
-    ORDER BY t.year, t.month;
+    SELECT year, month, total_visits
+    FROM mv_monthly_visits
+    ORDER BY year, month;
     """
 
     cur.execute(query)
@@ -90,10 +85,9 @@ def get_doctor_workload():
     cur = conn.cursor()
 
     query = """
-    SELECT doctor_id, SUM(total_visits)
-    FROM FactVisits
-    GROUP BY doctor_id
-    ORDER BY SUM(total_visits) DESC;
+    SELECT doctor_id, total_visits
+    FROM mv_doctor_workload
+    ORDER BY total_visits DESC;
     """
 
     cur.execute(query)
@@ -107,3 +101,18 @@ def get_doctor_workload():
         for r in rows
     ]
 
+def get_refresh_views():
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("REFRESH MATERIALIZED VIEW mv_top_doctors")
+    cur.execute("REFRESH MATERIALIZED VIEW mv_department_load")
+    cur.execute("REFRESH MATERIALIZED VIEW mv_monthly_visits")
+    cur.execute("REFRESH MATERIALIZED VIEW mv_doctor_workload")
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    return {"message": "Materialized views refreshed"}

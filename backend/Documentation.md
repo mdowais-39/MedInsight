@@ -975,5 +975,49 @@ Import the ***analytics_router*** in the main.py
 
 - All the **analytics working fine**
 
+## Phase 10 - Redis and dynamic queries
+
+### 1. Materialized Views (Pre-Aggregation)
+
+- Right now every query is pretty heavy like:
+GROUP BY doctor_id
+JOIN FactVisits
+
+**Solution:** precompute results using **materialized views**
+
+***warehouse/materialized_views.sql***
+
+
+Run in Postgres - \i warehouse/materialized_views.sql
+
+Refresh Strategy : REFRESH MATERIALIZED VIEW mv_top_doctors;
+
+### 2. Update Backend to Use MV
+
+Update the **old slow analytics queries** to **new materialized view queries**
+
+Currently **MV is static** - Materialized views do not auto update
+When new data comes - MV unchanged
+
+Solution - Refresh MV's
+REFRESH MATERIALIZED VIEW mv_top_doctors;
+REFRESH MATERIALIZED VIEW mv_department_load;
+REFRESH MATERIALIZED VIEW mv_monthly_visits;
+REFRESH MATERIALIZED VIEW mv_doctor_workload;
+
+- Add refresh utility
+REFRESH MATERIALIZED VIEW mv_top_doctors;
+REFRESH MATERIALIZED VIEW mv_department_load;
+REFRESH MATERIALIZED VIEW mv_monthly_visits;
+REFRESH MATERIALIZED VIEW mv_doctor_workload;
+- \i warehouse/refresh_views.sql
+
+- **API for Refresh**
+analytics_routes.py - having the route to the ***get_views*** function in the ***analytics_service.py***
+
+- Test
+
+
+
 
 
