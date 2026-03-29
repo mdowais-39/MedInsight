@@ -1157,3 +1157,52 @@ OLTP
 
 ----------------------------------------------------------
 
+## Phase 11 - Appointment Dashboards
+
+2 new API's:
+1. Doctor → View all their appointments
+2. Patient → View all their appointments
+
+### 1. Doctor Dashboard API
+**Doctor should see:**
+-All the appointments assigned to them
++ patient details
++ status
+
+- appointment_service.py
+
+### 2. Patient Dashboard API
+
+Patient should see:
+- All appointments
++ doctor details
++ status
+
+### 3. Join Full Medical Data(Detailed)
+
+When doctor opens their dashboard, they should see:
+
+Appointment details
++ Patient info
++ Visit (if exists)
++ Prescriptions (if added)
++ Treatments (if added)
+
+- All in one api response
+
+- DB Flow is:
+Appointments
+    ↓
+Visits (linked via appointment_id)
+    ↓
+Prescriptions & Treatments (linked via visit_id)
+
+
+We will implement in 3 parts:
+1. SQL + Service logic (appointment_service.py)
+2. Data formatter (same file)
+3. API route (appointment_routes.py)
+
+- Adding the service function
+- Format function
+- appointment_service.py
