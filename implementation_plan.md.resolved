@@ -1,0 +1,237 @@
+# MedInsight: Production Deployment Plan
+
+## Architecture
+
+```
+┌─────────────────────┐        ┌──────────────────────┐
+│  Vercel (Frontend)  │◄──────►│  Railway (Backend)   │
+│  Next.js 16         │  HTTP  │  FastAPI + Uvicorn    │
+└─────────────────────┘        └──────────┬───────────┘
+                                          │ psycopg2
+                                ┌─────────▼───────────┐
+                                │  Neon (Database)     │
+                                │  PostgreSQL (free)   │
+                                └──────────────────────┘
+```
+
+| Service | Platform | Free Tier |
+|---------|----------|-----------|
+| Frontend | [Vercel](https://vercel.com) | ✅ Unlimited |
+| Backend | [Railway](https://railway.app) | ✅ 500 hrs/mo |
+| Database | [Neon](https://neon.tech) | ✅ 512MB |
+
+> [!IMPORTANT]
+> Your PostgreSQL tables won't be auto-created. You must run the schema SQL on Neon after signup. Use the schema from your `database/` or `docs/` folder in the backend.
+
+---
+
+## Proposed Changes
+
+### Database
+
+#### Step 1 – Neon Setup
+1. Go to [neon.tech](https://neon.tech) → Create account → New Project → `healthcare_db`
+2. Copy the **connection string** (format: `postgresql://user:pass@host/db?sslmode=require`)
+3. Open **SQL Editor** and run your existing schema from `backend/database/` or `backend/docs/`
+
+---
+
+### Backend
+
+#### [MODIFY] [db_connection.py](file:///c:/Users/mdkai/OneDrive/Desktop/AIML%20PROJECTS/Clutch%20Projects/MedInsight_beta/backend/app/db_connection.py)
+
+Replace hardcoded credentials with environment variable:
+
+```diff
+-import psycopg2
++import psycopg2
++import os
++from dotenv import load_dotenv
++load_dotenv()
+
+ def get_connection():
+-    conn = psycopg2.connect(
+-        host="localhost",
+-        database="healthcare_db",
+-        user="postgres",
+-        password="postgres",
+-        port="5432"
+-    )
++    conn = psycopg2.connect(os.environ["DATABASE_URL"])
+     return conn
+```
+
+---
+
+#### [MODIFY] [main.py](file:///c:/Users/mdkai/OneDrive/Desktop/AIML%20PROJECTS/Clutch%20Projects/MedInsight_beta/backend/main.py)
+
+Add CORS middleware (permissive at first — can be locked to your Vercel URL later):
+
+```diff
+ from fastapi import FastAPI
++from fastapi.middleware.cors import CORSMiddleware
++import os
+
+ app = FastAPI(title="Smart Healthcare DBMS")
+
++app.add_middleware(
++    CORSMiddleware,
++    allow_origins=os.environ.get("ALLOWED_ORIGINS", "*").split(","),
++    allow_credentials=True,
++    allow_methods=["*"],
++    allow_headers=["*"],
++)
+```
+
+---
+
+#### [MODIFY] [patient_routes.py](file:///c:/Users/mdkai/OneDrive/Desktop/AIML%20PROJECTS/Clutch%20Projects/MedInsight_beta/backend/app/api/patient/patient_routes.py)
+
+Add `GET /patients/{patient_id}` for login validation:
+
+```python
+@router.get("/{patient_id}")
+def get_patient(patient_id: int):
+    patient = get_patient_by_id(patient_id)
+    if not patient:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Patient not found")
+    return patient
+```
+
+---
+
+#### [MODIFY] [patient_service.py](file:///c:/Users/mdkai/OneDrive/Desktop/AIML%20PROJECTS/Clutch%20Projects/MedInsight_beta/backend/app/services/patient_service.py)
+
+Add `get_patient_by_id` function.
+
+---
+
+#### [MODIFY] [doctor_routes.py](file:///c:/Users/mdkai/OneDrive/Desktop/AIML%20PROJECTS/Clutch%20Projects/MedInsight_beta/backend/app/api/doctor/doctor_routes.py)
+
+Add `GET /doctors/{doctor_id}` for doctor login validation.
+
+---
+
+#### [MODIFY] [doctor_service.py](file:///c:/Users/mdkai/OneDrive/Desktop/AIML%20PROJECTS/Clutch%20Projects/MedInsight_beta/backend/app/services/doctor_service.py)
+
+Add `get_doctor_by_id` function.
+
+---
+
+#### [MODIFY] [department_service.py](file:///c:/Users/mdkai/OneDrive/Desktop/AIML%20PROJECTS/Clutch%20Projects/MedInsight_beta/backend/app/services/department_service.py)
+
+Fix typo: `cur.execut` → `cur.execute` (line 38).
+
+---
+
+#### [MODIFY] [requirements.txt](file:///c:/Users/mdkai/OneDrive/Desktop/AIML%20PROJECTS/Clutch%20Projects/MedInsight_beta/backend/requirements.txt)
+
+Add `python-dotenv` and `gunicorn`.
+
+---
+
+#### [NEW] Procfile
+
+Railway uses this to start the server:
+```
+web: gunicorn main:app -w 2 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
+```
+
+---
+
+#### [NEW] .env (local only, gitignored)
+
+```
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/healthcare_db
+ALLOWED_ORIGINS=http://localhost:3000
+```
+
+---
+
+### Frontend
+
+#### [NEW] .env.local
+
+```
+NEXT_PUBLIC_API_URL=https://your-backend.railway.app
+```
+
+*(Update with real Railway URL after deploy)*
+
+---
+
+#### [MODIFY] [lib/api.ts](file:///c:/Users/mdkai/OneDrive/Desktop/AIML%20PROJECTS/Clutch%20Projects/MedInsight_beta/frontend/lib/api.ts)
+
+Add patient and doctor lookup calls:
+
+```typescript
+export const patientAPI = {
+  register: ...,   // already exists
+  getById: (id: number) => apiRequest<PatientResponse>(`/patients/${id}`),
+};
+
+export const doctorAPI = {
+  register: ...,   // already exists
+  getById: (id: number) => apiRequest<DoctorResponse>(`/doctors/${id}`),
+  ...              // recordVisit, addPrescription, addTreatment already exist
+};
+```
+
+---
+
+#### [MODIFY] Patient & Doctor login pages
+
+Both `handleLogin` functions will:
+1. Call `getById(parsedId)`
+2. Show error if 404 (ID doesn't exist)
+3. Use the real name from the API response in the `setUser()` call
+
+---
+
+## Deployment Steps
+
+### 1. Push to GitHub
+```bash
+git init   # if not already
+git add .
+git commit -m "feat: production deployment"
+git remote add origin https://github.com/you/medinsight.git
+git push -u origin main
+```
+
+### 2. Deploy Backend → Railway
+1. [railway.app](https://railway.app) → New Project → Deploy from GitHub repo
+2. Select the `backend/` directory (set **Root Directory** = `backend`)
+3. Add environment variables:
+   - `DATABASE_URL` = your Neon connection string
+   - `ALLOWED_ORIGINS` = `https://your-app.vercel.app` *(update after Vercel deploy)*
+4. Railway auto-detects `Procfile` and starts the server
+5. Copy the generated Railway URL (e.g. `https://medinsight-backend.railway.app`)
+
+### 3. Deploy Frontend → Vercel
+1. [vercel.com](https://vercel.com) → New Project → Import GitHub repo
+2. Set **Root Directory** = `frontend`
+3. Add environment variable:
+   - `NEXT_PUBLIC_API_URL` = your Railway backend URL
+4. Deploy — Vercel auto-detects Next.js
+
+### 4. Update CORS
+After both are deployed, go back to Railway → add:
+- `ALLOWED_ORIGINS` = `https://your-app.vercel.app` (exact Vercel URL)
+
+---
+
+## Verification Plan
+
+### API Health Check
+Visit `https://your-backend.railway.app/docs` — all 10 endpoints should be visible.
+
+### End-to-End Browser Test
+1. Open your Vercel URL
+2. Patient Portal → Register → get Patient ID
+3. Browse Departments → see real DB data
+4. Book Appointment → get Appointment ID
+5. Doctor Portal → Register → get Doctor ID
+6. Record Visit using Appointment ID + Patient ID
+7. Add Prescription + Treatment using Visit ID

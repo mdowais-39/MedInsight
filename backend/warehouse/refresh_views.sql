@@ -1,0 +1,4 @@
+REFRESH MATERIALIZED VIEW mv_top_doctors;
+REFRESH MATERIALIZED VIEW mv_department_load;
+REFRESH MATERIALIZED VIEW mv_monthly_visits;
+REFRESH MATERIALIZED VIEW mv_doctor_workload;
